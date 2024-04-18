@@ -241,8 +241,8 @@ func resourceEnvironmentKVMUpdate(_ context.Context, d *schema.ResourceData, m i
 	var diags diag.Diagnostics
 	envName, name := client.KVMDecodeId(d.Id())
 	c := m.(*client.Client)
-	//All other properties besides entries are ForceNew so just handle entries here
-	//Check for removal of entries
+	// All other properties besides entries are ForceNew so just handle entries here
+	// Check for removal of entries
 	encrypted := d.Get("encrypted").(bool)
 	var o interface{}
 	var n interface{}
@@ -258,7 +258,7 @@ func resourceEnvironmentKVMUpdate(_ context.Context, d *schema.ResourceData, m i
 		if newHasKey {
 			continue
 		}
-		//Delete entry
+		// Delete entry
 		requestPath := fmt.Sprintf(client.EnvironmentKVMPathEntriesGet, c.Organization, envName, name, oldKey)
 		_, err := c.HttpRequest(http.MethodDelete, requestPath, nil, nil, &bytes.Buffer{})
 		if err != nil {
@@ -268,13 +268,13 @@ func resourceEnvironmentKVMUpdate(_ context.Context, d *schema.ResourceData, m i
 	requestHeaders := http.Header{
 		headers.ContentType: []string{client.ApplicationJson},
 	}
-	//Public Apigee requires entries to be added/changed individually
+	// Public Apigee requires entries to be added/changed individually
 	if c.IsPublic() {
-		//Check for addition/modification of entries
+		// Check for addition/modification of entries
 		for newKey := range newE {
 			_, oldHasKey := oldE[newKey]
 			newOrModValue := newE[newKey].(string)
-			//Skip if change with same value
+			// Skip if change with same value
 			if oldHasKey {
 				oldValue := oldE[newKey].(string)
 				if oldValue == newOrModValue {
@@ -292,15 +292,19 @@ func resourceEnvironmentKVMUpdate(_ context.Context, d *schema.ResourceData, m i
 			}
 			requestPath := ""
 			if oldHasKey {
-				//Change entry
+				// Change entry
 				requestPath = fmt.Sprintf(client.EnvironmentKVMPathEntriesGet, c.Organization, envName, name, newKey)
+				_, err = c.HttpRequest(http.MethodPut, requestPath, nil, requestHeaders, &buf)
+				if err != nil {
+					return diag.FromErr(err)
+				}
 			} else {
-				//Add entry
+				// Add entry
 				requestPath = fmt.Sprintf(client.EnvironmentKVMPathEntries, c.Organization, envName, name)
-			}
-			_, err = c.HttpRequest(http.MethodPost, requestPath, nil, requestHeaders, &buf)
-			if err != nil {
-				return diag.FromErr(err)
+				_, err = c.HttpRequest(http.MethodPost, requestPath, nil, requestHeaders, &buf)
+				if err != nil {
+					return diag.FromErr(err)
+				}
 			}
 		}
 	} else {
