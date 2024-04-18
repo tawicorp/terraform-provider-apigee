@@ -5,6 +5,11 @@ default: testacc
 build:
 	goreleaser build --snapshot --clean
 
+# Run Release
+.PHONY: release
+release:
+	goreleaser release --clean
+
 # Run acceptance tests
 .PHONY: testacc
 testacc: build
